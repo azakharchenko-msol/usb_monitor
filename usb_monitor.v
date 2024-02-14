@@ -1,4 +1,5 @@
 import vselect
+import log
 
 #flag -I/usr/include -L/usr/lib
 
@@ -42,6 +43,7 @@ fn C.udev_list_entry_get_next(&C.udev_list_entry) &C.udev_list_entry
 fn C.udev_device_get_sysattr_value(&C.udev_device, &char) &char
 struct MonitorData{
 	device string
+	mut:
 	callback_connected ?fn ()
 	callback_disconnected ?fn ()
 }
@@ -63,11 +65,12 @@ fn enumerate_devices(udev &C.udev, data MonitorData) map[string]string {
 				println('Device Found: ${c_vendor.vstring()}:${c_device.vstring()}')
 				if data.device == '${c_vendor.vstring()}:${c_device.vstring()}' {
 					if callback_connected := data.callback_connected {
+						log.info("on_add_script script executed")
 						callback_connected()
 					}
 				}
+				devices[syspath] = '${c_vendor.vstring()}:${c_device.vstring()}'
 			}
-			devices[syspath] = '${c_vendor.vstring()}:${c_device.vstring()}'
 		}
 		C.udev_device_unref(dev)
 		entry = C.udev_list_entry_get_next(entry)
@@ -93,25 +96,29 @@ fn monitor_devices(udev &C.udev, devices  map[string]string, data MonitorData) {
 					action := C.udev_device_get_action(dev).vstring()
 					c_vendor := C.udev_device_get_sysattr_value(dev,c"idVendor")
 					c_device := C.udev_device_get_sysattr_value(dev,c"idProduct")
-								syspath := C.udev_device_get_syspath(dev).vstring()
+					syspath := C.udev_device_get_syspath(dev).vstring()
 
 					if c_vendor != nil && c_device != nil {
 						if action == 'bind' {
 							println('Added device: ${c_vendor.vstring()}:${c_device.vstring()}')
+							devices[syspath] = '${c_vendor.vstring()}:${c_device.vstring()}'
 							if data.device == '${c_vendor.vstring()}:${c_device.vstring()}' {
 								if callback_connected := data.callback_connected {
 									callback_connected()
+									log.info("on_add_script script executed")
 								}
 							}
 						} 
 					}
 					if action == 'unbind' && devices[syspath] != '' {
 						println('Removed device: ${devices[syspath]}')
-							if data.device == '${c_vendor.vstring()}:${c_device.vstring()}' {
-								if callback_disconnected := data.callback_disconnected {
-									callback_disconnected()
-								}
+						if data.device == devices[syspath] {
+							if callback_disconnected := data.callback_disconnected {
+								callback_disconnected()
+								log.info("on_remove_script script executed")
 							}
+						}
+						devices.delete(syspath)
 					}
 				}
 				C.udev_device_unref(dev)

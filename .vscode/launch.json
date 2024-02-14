@@ -9,7 +9,7 @@
             "name": "(lldb) Start",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/usb_monitor",
+            "program": "${workspaceFolder}/usbmon",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",

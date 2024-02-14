@@ -8,8 +8,9 @@
             "type": "shell",
             "command": "v",
             "args": [
-                "-g",		    // add more compiler options here if necessary
-                "${relativeFile}"   // or modify it according to your requirements
+                "-g",
+                "-enable-globals",		    // add more compiler options here if necessary
+                "."   // or modify it according to your requirements
             ],
             "group": "build",
             "presentation": {
